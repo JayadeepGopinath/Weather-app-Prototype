@@ -65,9 +65,65 @@
     .alert-card .a-title { font-size: 13px; font-weight: 700; }
     .alert-card .a-body  { font-size: 12px; color: var(--muted); margin-top: 2px; line-height: 1.4; }
 
+    /* ─── Search bar ─── */
+    .search-wrap {
+      padding: 14px 14px 0;
+    }
+    .search-row {
+      display: flex; gap: 8px;
+    }
+    .search-input {
+      flex: 1;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: white;
+      padding: 11px 16px;
+      border-radius: 99px;
+      font-size: 15px;
+      outline: none;
+    }
+    .search-input::placeholder { color: rgba(255,255,255,0.45); }
+    .search-input:focus { border-color: rgba(255,255,255,0.4); background: rgba(255,255,255,0.17); }
+    .search-btn {
+      background: rgba(255,255,255,0.18);
+      border: 1px solid rgba(255,255,255,0.25);
+      color: white; padding: 11px 18px;
+      border-radius: 99px; font-size: 15px; cursor: pointer;
+      white-space: nowrap;
+    }
+    .search-btn:active { opacity: 0.75; }
+    .loc-btn {
+      background: rgba(96,165,250,0.18);
+      border: 1px solid rgba(96,165,250,0.35);
+      color: var(--blue); padding: 8px 14px;
+      border-radius: 99px; font-size: 12px; cursor: pointer;
+      margin-top: 8px; display: inline-flex; align-items: center; gap: 5px;
+    }
+    .loc-btn:active { opacity: 0.75; }
+    /* Dropdown suggestions */
+    .suggest-list {
+      background: #1a3560;
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 14px;
+      margin-top: 6px;
+      overflow: hidden;
+      display: none;
+    }
+    .suggest-list.open { display: block; }
+    .suggest-item {
+      padding: 10px 16px;
+      font-size: 14px;
+      cursor: pointer;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+    .suggest-item:last-child { border-bottom: none; }
+    .suggest-item:hover { background: rgba(255,255,255,0.1); }
+    .suggest-item .si-name { font-weight: 600; }
+    .suggest-item .si-country { font-size: 12px; color: var(--muted); }
+
     /* ─── Header ─── */
     .header {
-      padding: 52px 20px 16px;
+      padding: 20px 20px 16px;
       text-align: center;
     }
     .location { font-size: 20px; font-weight: 600; letter-spacing: -0.2px; }
@@ -146,7 +202,21 @@
     .r { background: var(--red-bg);    color: var(--red); }
     .b { background: var(--blue-bg);   color: var(--blue); }
 
-    /* ─── UV bar ─── */
+    /* ─── Factor pills (outdoor detail) ─── */
+    .factor-pills {
+      display: flex; flex-wrap: wrap; gap: 5px;
+      margin-top: 9px;
+    }
+    .pill {
+      font-size: 11px; font-weight: 600;
+      padding: 3px 9px; border-radius: 99px;
+    }
+
+    /* ─── UV extras ─── */
+    .uv-detail {
+      font-size: 11px; color: var(--muted);
+      margin-top: 6px; line-height: 1.5;
+    }
     .uv-bar-wrap { margin-top: 10px; position: relative; }
     .uv-bar {
       height: 7px; border-radius: 4px;
@@ -160,7 +230,7 @@
       box-shadow: 0 0 0 2px rgba(0,0,0,0.3), 0 2px 6px rgba(0,0,0,0.4);
     }
 
-    /* ─── Wind bar ─── */
+    /* ─── Wind extras ─── */
     .wind-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
     .wind-big { font-size: 26px; font-weight: 700; }
     .wind-sm  { font-size: 13px; color: var(--muted); }
@@ -172,6 +242,13 @@
       height: 100%; border-radius: 3px;
       background: linear-gradient(to right, #4ade80, #fbbf24, #f87171);
       transition: width 0.6s ease;
+    }
+    .wind-detail {
+      font-size: 11px; color: var(--muted);
+      margin-top: 8px; line-height: 1.5;
+    }
+    .wind-compass {
+      font-size: 20px; margin-right: 4px;
     }
 
     /* ─── Commute row ─── */
@@ -234,6 +311,23 @@
 
 <!-- App -->
 <div id="app">
+
+  <!-- ── City Search Bar ── -->
+  <div class="search-wrap">
+    <div class="search-row">
+      <input class="search-input" id="searchInput" type="text"
+        placeholder="Search city…"
+        oninput="onSearchInput()"
+        onkeydown="if(event.key==='Enter') doSearch()"
+      />
+      <button class="search-btn" onclick="doSearch()">🔍</button>
+    </div>
+    <div>
+      <button class="loc-btn" onclick="UseMyLocation()">📍 Use my location</button>
+    </div>
+    <div class="suggest-list" id="suggestList"></div>
+  </div>
+
   <!-- Alerts -->
   <div id="alerts"></div>
 
@@ -255,7 +349,7 @@
     </div>
   </div>
 
-  <!-- 4 Need Cards -->
+  <!-- 4 Cards -->
   <div class="grid">
     <!-- Need 1: Rain Check -->
     <div class="card" id="rainCard">
@@ -275,6 +369,8 @@
         <div class="uv-bar"></div>
         <div class="uv-dot" id="uvDot" style="left:0%"></div>
       </div>
+      <!-- Extra UV detail -->
+      <div class="uv-detail" id="uvDetail"></div>
     </div>
 
     <!-- Need 3: Outdoor Activity -->
@@ -283,9 +379,11 @@
       <div class="card-val" id="outVal">--</div>
       <div class="card-sub" id="outSub">--</div>
       <div class="badge" id="outBadge"></div>
+      <!-- Factor pills showing what affected the score -->
+      <div class="factor-pills" id="outPills"></div>
     </div>
 
-    <!-- Need 4: Commute Snapshot placeholder (shown in wide card below) -->
+    <!-- Need 4: Wind -->
     <div class="card">
       <div class="card-lbl">💨 Wind</div>
       <div class="card-val" id="windSpeed">-- mph</div>
@@ -293,12 +391,14 @@
       <div style="margin-top:10px;">
         <div class="wind-track"><div class="wind-fill" id="windFill" style="width:0"></div></div>
       </div>
+      <!-- Extra wind detail: Beaufort + direction -->
+      <div class="wind-detail" id="windDetail"></div>
     </div>
   </div>
 
   <!-- Commute (full-width) -->
   <div class="card-full">
-    <div class="card-lbl">🚗 Next 3 Hours Commute Checks </div>
+    <div class="card-lbl">🚗 Next 3 Hours Commute Checks</div>
     <div class="card-sub" id="commuteSummary" style="margin-bottom:6px;">—</div>
     <div class="badge" id="commuteBadge" style="margin-top:0; margin-bottom:10px;"></div>
     <div class="commute-row" id="commuteRow"></div>
@@ -352,7 +452,7 @@ function el(id)    { return document.getElementById(id); }
 function txt(id,v) { el(id).textContent = v; }
 
 function showError(msg) {
-  hide('loading'); show('errScreen'); hide('app');
+  hide('loading'); show('errScreen'); el('app').style.display='none';
   el('errMsg').textContent = msg;
 }
 function showApp() {
@@ -362,62 +462,192 @@ function showApp() {
 
 /* ── Time helpers ── */
 function fmtTime(iso) {
-  // iso is like "2025-08-23T14:00"
   const h = parseInt(iso.slice(11,13));
   if (h === 0)  return '12 AM';
   if (h < 12)   return `${h} AM`;
   if (h === 12) return '12 PM';
   return `${h-12} PM`;
 }
-
 function nowHourIdx(times) {
-  const now = Date.now();
-  let best = 0, bestD = Infinity;
-  times.forEach((t, i) => {
-    const d = Math.abs(new Date(t) - now);
-    if (d < bestD) { bestD = d; best = i; }
-  });
+  const now = Date.now(); let best = 0, bestD = Infinity;
+  times.forEach((t, i) => { const d = Math.abs(new Date(t) - now); if (d < bestD) { bestD = d; best = i; } });
   return best;
+}
+
+/* ── Beaufort scale ── */
+function beaufort(mph) {
+  if (mph < 1)   return { num: 0, desc: 'Calm - smoke rises vertically' };
+  if (mph < 4)   return { num: 1, desc: 'Light Air - smoke drifts slowly' };
+  if (mph < 8)   return { num: 2, desc: 'Light Breeze - leaves rustle' };
+  if (mph < 13)  return { num: 3, desc: 'Gentle Breeze - leaves & twigs in motion' };
+  if (mph < 19)  return { num: 4, desc: 'Moderate Breeze - raises dust & loose paper' };
+  if (mph < 25)  return { num: 5, desc: 'Fresh Breeze - small trees sway' };
+  if (mph < 32)  return { num: 6, desc: 'Strong Breeze - umbrellas difficult to use' };
+  if (mph < 39)  return { num: 7, desc: 'Near Gale - walking against wind is hard' };
+  if (mph < 47)  return { num: 8, desc: 'Gale - twigs breaking off trees' };
+  if (mph < 55)  return { num: 9, desc: 'Strong Gale - slight structural damage' };
+  if (mph < 64)  return { num:10, desc: 'Storm - trees uprooted' };
+  if (mph < 73)  return { num:11, desc: 'Violent Storm - widespread damage' };
+  return           { num:12, desc: 'Hurricane - catastrophic damage' };
+}
+
+/* ── Wind direction ── */
+function windDir(deg) {
+  if (deg == null) return { label: '—', arrow: '?' };
+  const dirs = ['N','NE','E','SE','S','SW','W','NW'];
+  const arrows = ['↑','↗','→','↘','↓','↙','←','↖'];
+  const i = Math.round(deg / 45) % 8;
+  return { label: dirs[i], arrow: arrows[i] };
+}
+
+/* ── UV detail ── */
+function uvDetail(uv) {
+  // SPF recommendation + estimated burn time for average skin (Type II/III)
+  // WHO formula: burn time ≈ MED / (UV × 0.025) — simplified practical table
+  if (uv <= 0)  return { spf: 'None needed', burn: 'No risk' };
+  if (uv <= 2)  return { spf: 'SPF 15 optional', burn: 'Over 1 hr without protection' };
+  if (uv <= 5)  return { spf: 'SPF 30+',          burn: '~30–60 min unprotected' };
+  if (uv <= 7)  return { spf: 'SPF 30–50',         burn: '~20–30 min unprotected' };
+  if (uv <= 10) return { spf: 'SPF 50+',            burn: '~10–15 min unprotected' };
+  return               { spf: 'SPF 50+ (reapply)',   burn: 'Burns in < 10 min' };
 }
 
 /* ── Ratings ── */
 function uvInfo(uv) {
-  if (uv <= 2) return { lbl:'Low',       cls:'g', tip:'No protection needed' };
-  if (uv <= 5) return { lbl:'Moderate',  cls:'y', tip:'Sunscreen SPF 30+ recommended' };
-  if (uv <= 7) return { lbl:'High',      cls:'y', tip:'Protection essential outdoors' };
-  if (uv <= 10)return { lbl:'Very High', cls:'r', tip:'Limit midday sun exposure' };
-  return            { lbl:'Extreme',    cls:'r', tip:'Avoid outdoor exposure' };
+  if (uv <= 2)  return { lbl:'Low',       cls:'g', tip:'Minimal risk - enjoy outside' };
+  if (uv <= 5)  return { lbl:'Moderate',  cls:'y', tip:'Sunscreen recommended for outdoor activities' };
+  if (uv <= 7)  return { lbl:'High',      cls:'y', tip:'Protection essential outdoors' };
+  if (uv <= 10) return { lbl:'Very High', cls:'r', tip:'Limit midday sun exposure' };
+  return               { lbl:'Extreme',   cls:'r', tip:'Avoid outdoor exposure' };
 }
 
 function outdoorInfo(feelsF, windMph, precipPct) {
   let score = 100;
-  if      (feelsF < 10)  score -= 60;
-  else if (feelsF < 25)  score -= 45;
-  else if (feelsF < 35)  score -= 25;
-  else if (feelsF < 45)  score -= 10;
-  else if (feelsF > 105) score -= 50;
-  else if (feelsF > 95)  score -= 30;
-  else if (feelsF > 88)  score -= 12;
+  let tempLabel, windLabel, rainLabel;
 
-  if      (windMph > 35) score -= 35;
-  else if (windMph > 25) score -= 18;
-  else if (windMph > 15) score -= 7;
+  // Temperature impact
+  if      (feelsF < 10)  { score -= 60; tempLabel = { t:'🥶 Dangerously cold', cls:'r' }; }
+  else if (feelsF < 25)  { score -= 45; tempLabel = { t:'🥶 Very cold',        cls:'r' }; }
+  else if (feelsF < 35)  { score -= 25; tempLabel = { t:'❄️ Cold',             cls:'y' }; }
+  else if (feelsF < 45)  { score -= 10; tempLabel = { t:'🌡️ Chilly',          cls:'y' }; }
+  else if (feelsF > 105) { score -= 50; tempLabel = { t:'🔥 Dangerously hot',  cls:'r' }; }
+  else if (feelsF > 95)  { score -= 30; tempLabel = { t:'🥵 Very hot',         cls:'r' }; }
+  else if (feelsF > 88)  { score -= 12; tempLabel = { t:'☀️ Hot',              cls:'y' }; }
+  else                   {              tempLabel = { t:'😊 Comfortable',       cls:'g' }; }
 
-  if      (precipPct > 70) score -= 30;
-  else if (precipPct > 45) score -= 15;
-  else if (precipPct > 25) score -= 6;
+  // Wind impact
+  if      (windMph > 35) { score -= 35; windLabel = { t:'💨 Very windy',   cls:'r' }; }
+  else if (windMph > 25) { score -= 18; windLabel = { t:'💨 Windy',        cls:'y' }; }
+  else if (windMph > 15) { score -= 7;  windLabel = { t:'🌬️ Breezy',      cls:'y' }; }
+  else                   {              windLabel = { t:'🌿 Calm winds',   cls:'g' }; }
 
-  if      (score >= 82) return { lbl:'Great',  cls:'g' };
-  else if (score >= 62) return { lbl:'Good',   cls:'g' };
-  else if (score >= 42) return { lbl:'Fair',   cls:'y' };
-  else                  return { lbl:'Poor',   cls:'r' };
+  // Rain impact
+  if      (precipPct > 70) { score -= 30; rainLabel = { t:'🌧️ Very likely rain', cls:'r' }; }
+  else if (precipPct > 45) { score -= 15; rainLabel = { t:'🌦️ Rain possible',    cls:'y' }; }
+  else if (precipPct > 25) { score -= 6;  rainLabel = { t:'🌂 Slight chance',    cls:'y' }; }
+  else                     {              rainLabel = { t:'✅ Dry',               cls:'g' }; }
+
+  let lbl, cls;
+  if      (score >= 82) { lbl='Great'; cls='g'; }
+  else if (score >= 62) { lbl='Good';  cls='g'; }
+  else if (score >= 42) { lbl='Fair';  cls='y'; }
+  else                  { lbl='Poor';  cls='r'; }
+
+  return { lbl, cls, tempLabel, windLabel, rainLabel };
+}
+
+/* ── City search (Open-Meteo geocoding) ── */
+let suggestTimer = null;
+let currentSuggestions = [];
+
+async function geocodeCity(query) {
+  const r = await fetch(
+    `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=5&language=en&format=json`
+  );
+  const d = await r.json();
+  return d.results || [];
+}
+
+function onSearchInput() {
+  clearTimeout(suggestTimer);
+  const q = el('searchInput').value.trim();
+  if (q.length < 2) { closeSuggest(); return; }
+  suggestTimer = setTimeout(async () => {
+    const results = await geocodeCity(q);
+    currentSuggestions = results;
+    renderSuggestions(results);
+  }, 300);
+}
+
+function renderSuggestions(results) {
+  const list = el('suggestList');
+  if (!results.length) { closeSuggest(); return; }
+  list.innerHTML = results.map((r, i) => {
+    const admin = [r.admin1, r.country].filter(Boolean).join(', ');
+    return `<div class="suggest-item" onclick="pickSuggestion(${i})">
+      <div class="si-name">${r.name}</div>
+      <div class="si-country">${admin}</div>
+    </div>`;
+  }).join('');
+  list.classList.add('open');
+}
+
+function closeSuggest() {
+  el('suggestList').classList.remove('open');
+}
+
+async function pickSuggestion(i) {
+  const r = currentSuggestions[i];
+  closeSuggest();
+  el('searchInput').value = r.name;
+  await loadCity(r.latitude, r.longitude, r.name + (r.admin1 ? `, ${r.admin1}` : '') + (r.country ? `, ${r.country}` : ''));
+}
+
+async function doSearch() {
+  const q = el('searchInput').value.trim();
+  if (!q) return;
+  el('app').style.display = 'none';
+  show('loading');
+  closeSuggest();
+  try {
+    const results = await geocodeCity(q);
+    if (!results.length) {
+      showError(`No city found for "${q}". Try a different spelling.`);
+      return;
+    }
+    const r = results[0];
+    const label = r.name + (r.admin1 ? `, ${r.admin1}` : '') + (r.country ? `, ${r.country}` : '');
+    await loadCity(r.latitude, r.longitude, label);
+  } catch (e) {
+    showError('Search failed. Check your connection and try again.');
+  }
+}
+
+async function loadCity(lat, lon, placeName) {
+  el('app').style.display = 'none';
+  show('loading');
+  try {
+    const [data, alerts] = await Promise.all([
+      fetchWeather(lat, lon),
+      fetchAlerts(lat, lon),
+    ]);
+    render(data, placeName, alerts);
+  } catch(e) {
+    showError('Failed to load weather. Check your internet connection.');
+  }
+}
+
+function useMyLocation() {
+  el('searchInput').value = '';
+  closeSuggest();
+  init();
 }
 
 /* ── Fetch helpers ── */
 async function fetchWeather(lat, lon) {
   const params = new URLSearchParams({
     latitude: lat, longitude: lon,
-    current: 'temperature_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m,wind_gusts_10m,uv_index',
+    current: 'temperature_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m,wind_gusts_10m,wind_direction_10m,uv_index',
     hourly:  'temperature_2m,apparent_temperature,precipitation_probability,precipitation,weather_code,wind_speed_10m',
     temperature_unit: 'fahrenheit',
     wind_speed_unit: 'mph',
@@ -431,7 +661,6 @@ async function fetchWeather(lat, lon) {
 }
 
 async function fetchPlace(lat, lon) {
-  // Try NWS (US only)
   try {
     const r = await fetch(
       `https://api.weather.gov/points/${lat.toFixed(4)},${lon.toFixed(4)}`,
@@ -443,7 +672,6 @@ async function fetchPlace(lat, lon) {
       if (rp?.city) return `${rp.city}, ${rp.state}`;
     }
   } catch {}
-  // Fallback: Nominatim
   try {
     const r = await fetch(
       `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`,
@@ -490,9 +718,9 @@ function render(data, place, alerts) {
   txt('hFeels', `Feels like ${displayTemp(cur.apparent_temperature)}`);
 
   // ── Need 1: Rain Check (next 6 hours) ──
-  const p6  = h.precipitation_probability.slice(hi, hi+6);
-  const w6  = h.weather_code.slice(hi, hi+6);
-  const max6= Math.max(...p6);
+  const p6   = h.precipitation_probability.slice(hi, hi+6);
+  const w6   = h.weather_code.slice(hi, hi+6);
+  const max6 = Math.max(...p6);
   const anyRain6 = w6.some(c => wmo(c).rain);
   txt('rainPct', `${max6}%`);
   const needUmbrella = max6 >= 40 || anyRain6;
@@ -506,58 +734,58 @@ function render(data, place, alerts) {
   const uv = Math.round(cur.uv_index ?? 0);
   txt('uvVal', uv);
   const ui = uvInfo(uv);
+  const ud = uvDetail(uv);
   txt('uvSub',  ui.tip);
   el('uvBadge').className = `badge ${ui.cls}`;
   txt('uvBadge', ui.lbl);
-  // Position dot: UV 0–11+ mapped to 0–100%
   el('uvDot').style.left = `${Math.min(98, (uv / 11) * 100)}%`;
+  // Extra UV detail
+  el('uvDetail').innerHTML = `🧴 <strong>${ud.spf}</strong><br>⏱ ${ud.burn}`;
 
   // ── Need 3: Outdoor Activity ──
   const oi = outdoorInfo(cur.apparent_temperature, cur.wind_speed_10m, h.precipitation_probability[hi] || 0);
   txt('outVal', oi.lbl);
-  const tDesc = cur.apparent_temperature < 32 ? 'Freezing' :
-                cur.apparent_temperature < 45 ? 'Cold'     :
-                cur.apparent_temperature > 95 ? 'Very hot' :
-                cur.apparent_temperature > 85 ? 'Hot'      : 'Comfortable';
-  txt('outSub', `${tDesc} · Wind ${Math.round(cur.wind_speed_10m)} mph`);  // wind stays mph
+  txt('outSub', 'Based on temp · wind · rain chance');
   el('outBadge').className = `badge ${oi.cls}`;
   txt('outBadge', oi.lbl);
+  // Factor pills
+  el('outPills').innerHTML = [oi.tempLabel, oi.windLabel, oi.rainLabel].map(f =>
+    `<span class="pill ${f.cls}">${f.t}</span>`
+  ).join('');
 
   // ── Wind ──
+  const bft  = beaufort(cur.wind_speed_10m);
+  const wdir = windDir(cur.wind_direction_10m);
   txt('windSpeed', `${Math.round(cur.wind_speed_10m)} mph`);
   txt('windGusts', `Gusts: ${Math.round(cur.wind_gusts_10m)} mph`);
   el('windFill').style.width = `${Math.min(100, (cur.wind_speed_10m / 50) * 100)}%`;
+  // Extra wind detail: direction + Beaufort description
+  el('windDetail').innerHTML =
+    `<span class="wind-compass">${wdir.arrow}</span> From the <strong>${wdir.label}</strong><br>` +
+    `Beaufort ${bft.num} — ${bft.desc}`;
 
-  // ── Need 4: Commute Check (next 3 hours) ──
+  // ── Commute Check (next 3 hours) ──
   const c3codes  = h.weather_code.slice(hi, hi+3);
   const c3precip = h.precipitation_probability.slice(hi, hi+3);
-  const c3temps  = h.temperature_2m.slice(hi, hi+3);
-  const c3feelsL = h.apparent_temperature.slice(hi, hi+3);
   const maxCPrecip = Math.max(...c3precip);
-  const hasRainC  = c3codes.some(c => wmo(c).rain);
-  const hasFogC   = c3codes.some(c => wmo(c).fog);
-  const hasIceC   = c3codes.some(c => wmo(c).ice);
-  const hasThunC  = c3codes.some(c => wmo(c).thunder);
+  const hasRainC = c3codes.some(c => wmo(c).rain);
+  const hasFogC  = c3codes.some(c => wmo(c).fog);
+  const hasIceC  = c3codes.some(c => wmo(c).ice);
+  const hasThunC = c3codes.some(c => wmo(c).thunder);
 
   let cSummary, cCls;
   if (hasThunC) {
-    cSummary = 'Thunderstorm risk — take shelter if driving';
-    cCls = 'r';
+    cSummary = 'Thunderstorm risk — take shelter if driving'; cCls = 'r';
   } else if (hasIceC) {
-    cSummary = 'Freezing conditions — ice on roads possible';
-    cCls = 'r';
+    cSummary = 'Freezing conditions — ice on roads possible'; cCls = 'r';
   } else if (hasFogC) {
-    cSummary = 'Fog reducing visibility — drive with caution';
-    cCls = 'y';
+    cSummary = 'Fog reducing visibility — drive with caution'; cCls = 'y';
   } else if (hasRainC || maxCPrecip >= 50) {
-    cSummary = `Rain likely — expect wet roads · ${maxCPrecip}%`;
-    cCls = 'b';
+    cSummary = `Rain likely — expect wet roads · ${maxCPrecip}%`; cCls = 'b';
   } else if (maxCPrecip >= 25) {
-    cSummary = `Some rain possible · ${maxCPrecip}% chance`;
-    cCls = 'y';
+    cSummary = `Some rain possible · ${maxCPrecip}% chance`; cCls = 'y';
   } else {
-    cSummary = `Clear conditions · ${maxCPrecip}% rain chance`;
-    cCls = 'g';
+    cSummary = `Clear conditions · ${maxCPrecip}% rain chance`; cCls = 'g';
   }
   txt('commuteSummary', cSummary);
   el('commuteBadge').className = `badge ${cCls}`;
@@ -566,17 +794,16 @@ function render(data, place, alerts) {
     cCls==='y' ? 'Use caution' :
     cCls==='b' ? '☔ Wet roads' : '✓ Clear');
 
-  // Commute hourly mini-cards
   const cRow = el('commuteRow');
   cRow.innerHTML = '';
   for (let i = 0; i < 3; i++) {
     const idx = hi + i;
     if (idx >= h.time.length) break;
-    const cw   = wmo(h.weather_code[idx]);
-    const ct   = displayTempNum(h.temperature_2m[idx]);
-    const cp   = h.precipitation_probability[idx] || 0;
-    const lbl  = i === 0 ? 'Now' : fmtTime(h.time[idx]);
-    const div  = document.createElement('div');
+    const cw  = wmo(h.weather_code[idx]);
+    const ct  = displayTempNum(h.temperature_2m[idx]);
+    const cp  = h.precipitation_probability[idx] || 0;
+    const lbl = i === 0 ? 'Now' : fmtTime(h.time[idx]);
+    const div = document.createElement('div');
     div.className = 'commute-hour';
     div.innerHTML = `
       <div class="ch-time">${lbl}</div>
@@ -643,7 +870,6 @@ function displayTemp(f) {
 function displayTempNum(f) {
   return useFahrenheit ? Math.round(f) : Math.round(toC(f));
 }
-
 function toggleUnit() {
   useFahrenheit = !useFahrenheit;
   el('btnF').classList.toggle('active', useFahrenheit);
@@ -658,7 +884,7 @@ async function init() {
   show('loading');
 
   if (!navigator.geolocation) {
-    showError('Geolocation is not supported by your browser. Please use Chrome or Safari.');
+    showError('Geolocation is not supported. Search for a city above instead.');
     return;
   }
 
@@ -674,20 +900,25 @@ async function init() {
         render(data, place, alerts);
       } catch (e) {
         console.error(e);
-        showError('Failed to load weather data. Check your internet connection and try again.');
+        showError('Failed to load weather data. Check your internet connection.');
       }
     },
     err => {
       const msgs = {
-        1: 'Location permission denied. Tap "Allow" when the browser asks for your location.',
-        2: 'Could not determine your location. Try again in a moment.',
-        3: 'Location request timed out. Please try again.',
+        1: 'Location permission denied. Search for a city above, or allow location access.',
+        2: 'Could not determine your location. Try searching a city.',
+        3: 'Location request timed out. Try searching a city.',
       };
-      showError(msgs[err.code] || 'Could not get your location. Please try again.');
+      showError(msgs[err.code] || 'Could not get your location. Search for a city above.');
     },
     { timeout: 12000, maximumAge: 60000 }
   );
 }
+
+// Close suggestions when clicking outside
+document.addEventListener('click', e => {
+  if (!e.target.closest('.search-wrap')) closeSuggest();
+});
 
 init();
 </script>
